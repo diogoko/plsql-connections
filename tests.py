@@ -15,9 +15,9 @@ Workspace=
 Color=65535
 '''
 
-ROOT_FOLDER_1 = '''DisplayName=Imported History
+ROOT_FOLDER_3 = '''DisplayName=Imported History
 IsFolder=1
-Number=1
+Number=3
 Parent=-1
 Username=
 Database=
@@ -27,9 +27,9 @@ Workspace=
 Color=255
 '''
 
-ROOT_FOLDER_0_CHILD_2 = '''DisplayName=child 1
+ROOT_FOLDER_0_CHILD_1 = '''DisplayName=child 1
 IsFolder=0
-Number=2
+Number=1
 Parent=0
 Username=foo
 Database=mydb
@@ -39,6 +39,20 @@ Workspace=
 Password=bar
 IdentifiedExt=0
 Color=65535
+'''
+
+ROOT_FOLDER_0_CHILD_2 = '''DisplayName=child 2
+IsFolder=0
+Number=2
+Parent=0
+Username=foo2
+Database=mydb2
+ConnectAs=Normal
+Edition=edition
+Workspace=workspace 1
+Password=bar2
+IdentifiedExt=1
+Color=255
 '''
 
 
@@ -85,7 +99,7 @@ class TestReader(unittest.TestCase):
     self.assertEqual(0, len(root.children[0].children))
 
   def test_many_root_folders(self):
-    reader = plsql.Reader(StringIO(ROOT_FOLDER_0 + ROOT_FOLDER_1))
+    reader = plsql.Reader(StringIO(ROOT_FOLDER_0 + ROOT_FOLDER_3))
     root = reader.read()
     
     self.assertEqual(2, len(root.children))
@@ -97,7 +111,7 @@ class TestReader(unittest.TestCase):
     self.assertEqual(0, len(root.children[1].children))
 
   def test_tree(self):
-    reader = plsql.Reader(StringIO(ROOT_FOLDER_0 + ROOT_FOLDER_1 + ROOT_FOLDER_0_CHILD_2))
+    reader = plsql.Reader(StringIO(ROOT_FOLDER_0 + ROOT_FOLDER_3 + ROOT_FOLDER_0_CHILD_1))
     root = reader.read()
 
     self.assertEqual(2, len(root.children))
@@ -115,11 +129,7 @@ class TestReader(unittest.TestCase):
 
 class TestWriter(unittest.TestCase):
   def _build_root_folder_0(self):
-    item = plsql.Item()
-    item.displayName = 'Imported Fixed Users'
-    item.isFolder = True
-    item.number = None
-    item.parent = None
+    item = plsql.Folder('Imported Fixed Users')
     item.username = ''
     item.database = ''
     item.connectAs = ''
@@ -129,12 +139,8 @@ class TestWriter(unittest.TestCase):
 
     return item
 
-  def _build_root_folder_1(self):
-    item = plsql.Item()
-    item.displayName = 'Imported History'
-    item.isFolder = True
-    item.number = None
-    item.parent = None
+  def _build_root_folder_3(self):
+    item = plsql.Folder('Imported History')
     item.username = ''
     item.database = ''
     item.connectAs = ''
@@ -145,10 +151,7 @@ class TestWriter(unittest.TestCase):
     return item
 
   def _build_child_2(self):
-    item = plsql.Item()
-    item.displayName = 'child 1'
-    item.isFolder = False
-    item.number = None
+    item = plsql.Connection('child 1')
     item.username = 'foo'
     item.database = 'mydb'
     item.connectAs = 'Normal'
@@ -160,8 +163,21 @@ class TestWriter(unittest.TestCase):
 
     return item
 
+  def _build_child_3(self):
+    item = plsql.Connection('child 2')
+    item.username = 'foo2'
+    item.database = 'mydb2'
+    item.connectAs = 'Normal'
+    item.edition = 'edition'
+    item.workspace = 'workspace 1'
+    item.password = 'bar2'
+    item.identifiedExt = True
+    item.color = 255
+
+    return item
+
   def setUp(self):
-    self.root = plsql.Item()
+    self.root = plsql.Root()
     self.outFile = StringIO()
     self.writer = plsql.Writer(self.outFile)
 
@@ -175,16 +191,16 @@ class TestWriter(unittest.TestCase):
 
   def test_tree(self):
     folder_0 = self._build_root_folder_0()
-    child_2 = self._build_child_2()
-    folder_0.appendChild(child_2)
+    folder_0.appendChild(self._build_child_2())
+    folder_0.appendChild(self._build_child_3())
 
     self.root.appendChild(folder_0)
-    self.root.appendChild(self._build_root_folder_1())
+    self.root.appendChild(self._build_root_folder_3())
 
     self.writer.write(self.root)
     text = self.outFile.getvalue()
 
-    self.assertEqual(ROOT_FOLDER_0 + ROOT_FOLDER_1 + ROOT_FOLDER_0_CHILD_2, text)
+    self.assertEqual(ROOT_FOLDER_0 + ROOT_FOLDER_0_CHILD_1 + ROOT_FOLDER_0_CHILD_2 + ROOT_FOLDER_3, text)
 
 
 if __name__ == '__main__':
