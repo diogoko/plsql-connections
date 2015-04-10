@@ -1,6 +1,6 @@
 class Item(object):
-  def __init__(self):
-    self.displayName = ''
+  def __init__(self, displayName = ''):
+    self.displayName = displayName
     self.isFolder = False
     self.number = 0
     self.parent = None
@@ -18,6 +18,23 @@ class Item(object):
   def appendChild(self, child):
     child.parent = self
     self.children.append(child)
+
+
+class Folder(Item):
+  def __init__(self, displayName = ''):
+    Item.__init__(self, displayName)
+    self.isFolder = True
+
+
+class Root(Folder):
+  def __init__(self):
+    Folder.__init__(self, '')
+
+
+class Connection(Item):
+  def __init__(self, displayName = ''):
+    Item.__init__(self, displayName)
+    self.isFolder = False
 
 
 class Reader(object):
@@ -79,19 +96,17 @@ class Reader(object):
 class Writer(object):
   def __init__(self, outputFile):
     self.outputFile = outputFile
-  
-  def write(self, rootItem):
-    rootItem.number = -1
 
-    number = 0
-    items = list(rootItem.children)
-    while items:
-      item = items.pop(0)
-      item.number = number
-      number += 1
+  def write(self, rootItem, _number = -1):
+    rootItem.number = _number
+    if rootItem.number != -1:
+      self._writeItem(rootItem)
+    _number += 1
 
-      self._writeItem(item)
-      items.extend(item.children)
+    for child in rootItem.children:
+      _number = self.write(child, _number)
+
+    return _number
 
   def _writeItem(self, item):
     FOLDER_TEMPLATE = '''DisplayName={}
